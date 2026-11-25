@@ -5,574 +5,900 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ZANN ELIMINASI VIP</title>
+
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#080914;color:#fff;font-family:Arial,sans-serif}
-header{padding:18px;background:#11152b;border-bottom:1px solid #34365c;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-.logo{font-size:22px;font-weight:900;color:#a78bfa}
-nav{display:flex;gap:7px;flex-wrap:wrap}
-button{border:0;border-radius:9px;padding:11px 14px;background:linear-gradient(90deg,#8b5cf6,#2563eb);color:#fff;font-weight:bold;cursor:pointer}
-button.secondary{background:#303653}
-button.danger{background:#a72e4d}
-main{max-width:1050px;margin:22px auto;padding:0 13px}
-section{background:#12172b;border:1px solid #303655;border-radius:15px;padding:17px;margin-bottom:15px}
-h2{margin-top:0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
-.plan{padding:15px;border:1px solid #4b4778;border-radius:12px;background:#1a1d37}
-.price{font-size:25px;font-weight:bold;color:#facc15;margin:10px 0}
-input,select{width:100%;padding:12px;border:1px solid #41486a;background:#090e20;color:#fff;border-radius:8px;margin:7px 0 12px}
-label{font-size:13px;color:#c6c8db}
-.row{display:flex;gap:8px;flex-wrap:wrap}
-.row>*{flex:1;min-width:130px}
-.hidden{display:none!important}
-.notice{background:#211d3b;border-left:3px solid #a78bfa;padding:12px;border-radius:7px;margin-top:12px;overflow-wrap:anywhere}
-.item{padding:11px;background:#1b2038;border-radius:9px;margin:7px 0;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-.small{font-size:12px;color:#b9bdd2}
-#round{font-size:42px;color:#facc15;font-weight:bold}
-#timer{font-size:38px;text-align:center;color:#facc15;font-weight:bold;padding:12px}
-pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#080c19;padding:12px;border-radius:8px}
-footer{text-align:center;color:#888;padding:25px}
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 16px;
+  background: #080b18;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+main {
+  max-width: 950px;
+  margin: auto;
+}
+
+header {
+  padding: 25px 15px;
+  text-align: center;
+  background: linear-gradient(135deg,#24104c,#101b43);
+  border: 1px solid #6650bd;
+  border-radius: 18px;
+}
+
+header h1 {
+  color: #c4a5ff;
+  margin: 0;
+}
+
+header p {
+  color: #b9c3ff;
+}
+
+.card {
+  background: #151a30;
+  border: 1px solid #343c60;
+  padding: 17px;
+  border-radius: 15px;
+  margin: 15px 0;
+}
+
+h2 {
+  color: #b99aff;
+  font-size: 20px;
+}
+
+h3 {
+  color: #91a8ff;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 13px;
+  margin: 7px 0;
+  border: 1px solid #414b72;
+  border-radius: 9px;
+  font-size: 14px;
+}
+
+input, select {
+  background: #0b1021;
+  color: white;
+}
+
+button {
+  background: linear-gradient(90deg,#7445ed,#3867dc);
+  color: white;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+button.danger {
+  background: #a72e50;
+}
+
+button.secondary {
+  background: #343d60;
+}
+
+button:active {
+  opacity: .8;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.item {
+  background: #232b49;
+  padding: 13px;
+  margin: 9px 0;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.status {
+  color: #86efac;
+  font-weight: bold;
+}
+
+.muted {
+  color: #aab2d2;
+  font-size: 13px;
+}
+
+.result {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #86efac;
+}
+
+nav {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 15px 0;
+}
+
+nav button {
+  width: auto;
+  flex: 1;
+  min-width: 100px;
+}
+
+.panel {
+  display: none;
+}
+
+.panel.active {
+  display: block;
+}
+
+footer {
+  text-align: center;
+  color: #929bbd;
+  padding: 20px;
+  font-size: 12px;
+}
+
+@media(max-width:500px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
 </head>
+
 <body>
+<main>
+
 <header>
-  <div class="logo">ZANN ELIMINASI VIP</div>
-  <nav>
-    <button onclick="show('home')">HOME</button>
-    <button onclick="show('store')">BELI KEY</button>
-    <button onclick="show('login')">LOGIN</button>
-    <button onclick="show('dashboard')">DASHBOARD</button>
-  </nav>
+  <h1>ZANN ELIMINASI VIP</h1>
+  <p>ULTIMATE ELIMINATION SYSTEM</p>
+  <small>VIP GAME CONTROL CENTER</small>
 </header>
 
-<main>
-<section id="home">
-  <h1>WELCOME TO ZANN ELIMINASI VIP</h1>
-  <p class="small">VIP KEY SYSTEM • ELIMINATION GAME</p>
-  <button onclick="show('store')">BELI KEY SEKARANG</button>
-  <button class="secondary" onclick="show('login')">LOGIN AKUN</button>
-  <div class="notice">Beli KEY tanpa login. Setelah KEY diterima, daftar akun atau login lalu aktifkan KEY untuk masuk ke game.</div>
-</section>
+<!-- STORE -->
+<section class="card">
+  <h2>VIP KEY STORE</h2>
+  <p>3 Hari — <b>Rp5.000</b></p>
+  <p>7 Hari — <b>Rp10.000</b></p>
+  <p>30 Hari — <b>Rp40.000</b></p>
+  <p>Permanen — <b>Rp100.000</b></p>
 
-<section id="store" class="hidden">
-  <h2>STORE KEY VIP</h2>
-  <div class="grid">
-    <div class="plan"><b>KEY 3 HARI</b><div class="price">Rp5.000</div><button onclick="pick('3hari')">PILIH</button></div>
-    <div class="plan"><b>KEY 7 HARI</b><div class="price">Rp10.000</div><button onclick="pick('7hari')">PILIH</button></div>
-    <div class="plan"><b>KEY 30 HARI</b><div class="price">Rp40.000</div><button onclick="pick('30hari')">PILIH</button></div>
-    <div class="plan"><b>KEY PERMANEN</b><div class="price">Rp100.000</div><button onclick="pick('permanen')">PILIH</button></div>
-  </div>
-  <h3>Checkout</h3>
-  <label>Paket</label>
+  <input id="buyer" placeholder="Nama pembeli">
+
   <select id="buyPlan">
-    <option value="3hari">3 Hari - Rp5.000</option>
-    <option value="7hari">7 Hari - Rp10.000</option>
-    <option value="30hari">30 Hari - Rp40.000</option>
-    <option value="permanen">Permanen - Rp100.000</option>
+    <option value="3hari">KEY 3 Hari</option>
+    <option value="7hari">KEY 7 Hari</option>
+    <option value="30hari">KEY 30 Hari</option>
+    <option value="permanen">KEY Permanen</option>
   </select>
-  <label>Jumlah KEY (1–20)</label>
-  <input id="buyQty" type="number" min="1" max="20" value="1">
-  <button onclick="checkout()">BUAT PESANAN</button>
-  <div id="checkoutResult"></div>
-  <p class="small">Transfer hanya jika nomor tujuan sudah dipastikan benar. KEY diterbitkan setelah admin memeriksa uang yang benar-benar masuk.</p>
+
+  <input id="buyCount" type="number" min="1" max="100" value="1">
+
+  <button onclick="checkout()">BELI KEY SEKARANG</button>
+
+  <div id="checkoutResult" class="item hidden"></div>
 </section>
 
-<section id="login" class="hidden">
-  <h2>LOGIN</h2>
-  <label>Username</label>
-  <input id="loginUsername" placeholder="Username">
-  <label>Password</label>
-  <input id="loginPassword" type="password" placeholder="Password">
-  <button onclick="login()">LOGIN</button>
-  <hr>
-  <h3>DAFTAR AKUN</h3>
-  <input id="registerUsername" placeholder="Username baru">
-  <input id="registerPassword" type="password" placeholder="Password minimal 8 karakter">
-  <button class="secondary" onclick="register()">DAFTAR</button>
-  <div id="authMessage" class="notice hidden"></div>
-</section>
+<!-- ACCOUNT -->
+<section class="card" id="account">
+  <h2>LOGIN / REGISTER</h2>
 
-<section id="dashboard" class="hidden">
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password minimal 8 karakter">
+
   <div class="row">
-    <h2 style="flex:2">DASHBOARD VIP</h2>
-    <button class="secondary" onclick="logout()">LOGOUT</button>
-  </div>
-  <div id="status" class="notice">Status akun akan ditampilkan di sini.</div>
-
-  <div id="redeemArea">
-    <h3>AKTIFKAN KEY</h3>
-    <input id="redeemCode" placeholder="Masukkan KEY ZVIP-...">
-    <button onclick="redeem()">AKTIFKAN KEY</button>
+    <button onclick="register()">REGISTER</button>
+    <button onclick="login()">LOGIN</button>
   </div>
 
-  <div id="gameArea" class="hidden">
-    <hr>
-    <h2>⚔️ MODE ELIMINASI</h2>
-    <div class="grid">
-      <div class="plan"><div class="small">RONDE SEKARANG</div><div id="round">0</div></div>
-      <div class="plan"><div class="small">PESERTA AKTIF</div><div class="price" id="activeCount">0</div></div>
-      <div class="plan"><div class="small">TERELIMINASI</div><div class="price" id="outCount">0</div></div>
-    </div>
-    <div id="timer">MODE SIAP</div>
-    <div id="participants"></div>
-    <div id="winner" class="notice hidden"></div>
+  <p id="accountMessage" class="muted"></p>
+</section>
 
-    <hr>
-    <h2>FITUR GAME</h2>
-    <h3>TIMER</h3>
-    <input id="timerSeconds" type="number" min="1" value="60" placeholder="Durasi detik">
-    <button onclick="saveTimer()">SIMPAN TIMER</button>
+<!-- VIP -->
+<section class="card hidden" id="vip">
+  <h2>VIP ACCOUNT</h2>
+  <p id="keyStatus" class="status">Memeriksa KEY...</p>
 
-    <h3>MYSTERY BOX</h3>
-    <input id="boxCount" type="number" min="1" value="10">
-    <input id="boxPrize" placeholder="Hadiah / isi box">
-    <button onclick="saveMystery()">SIMPAN MYSTERY BOX</button>
+  <input id="keyCode" placeholder="Masukkan KEY VIP">
+  <button onclick="redeem()">AKTIFKAN KEY</button>
 
-    <h3>MANUAL GIFT</h3>
-    <input id="giftName" placeholder="Nama gift">
-    <input id="giftValue" type="number" min="0" placeholder="Nilai gift">
-    <button onclick="saveGift()">TAMBAH GIFT</button>
-
-    <h3>LEADERBOARD</h3>
-    <input id="leaderName" placeholder="Nama pemain">
-    <input id="leaderScore" type="number" min="0" placeholder="Poin">
-    <button onclick="saveLeaderboard()">SIMPAN SKOR</button>
-
-    <h3>LELANG</h3>
-    <input id="auctionItem" placeholder="Nama barang">
-    <input id="auctionBid" type="number" min="0" placeholder="Bid tertinggi">
-    <div class="row">
-      <button onclick="saveAuction(true)">MULAI LELANG</button>
-      <button class="danger" onclick="saveAuction(false)">RESET LELANG</button>
-    </div>
-
-    <h3>KARAKTER & BACKGROUND</h3>
-    <select id="character">
-      <option value="default">Default</option>
-      <option value="warrior">Warrior</option>
-      <option value="ninja">Ninja</option>
-      <option value="legend">Legend</option>
-    </select>
-    <input id="background" placeholder="Nama background">
-    <button onclick="saveCharacter()">SIMPAN</button>
-
-    <h3>HOST TIKTOK</h3>
-    <input id="hostId" placeholder="ID host">
-    <input id="hostUsername" placeholder="Username TikTok">
-    <button onclick="saveHost()">SIMPAN HOST</button>
-    <p class="small">Pengaturan host tersimpan, tetapi TikTok LIVE Relay belum terhubung.</p>
-  </div>
-
-  <div id="adminArea" class="hidden">
-    <hr>
-    <h2>🛡️ PANEL ADMIN</h2>
-    <h3>BUAT KEY TANPA BATAS TOTAL</h3>
-    <select id="adminPlan">
-      <option value="3hari">3 Hari - Rp5.000</option>
-      <option value="7hari">7 Hari - Rp10.000</option>
-      <option value="30hari">30 Hari - Rp40.000</option>
-      <option value="permanen">Permanen - Rp100.000</option>
-    </select>
-    <input id="adminQty" type="number" min="1" value="1" placeholder="Jumlah KEY">
-    <button onclick="adminCreateKeys()">BUAT KEY</button>
-    <pre id="createdKeys"></pre>
-    <p class="small">Tidak ada batas total KEY. Untuk menjaga kestabilan server, satu permintaan dibatasi 10.000 KEY; admin dapat membuat batch berikutnya.</p>
-
-    <h3>TRANSAKSI PEMBELI</h3>
-    <button class="secondary" onclick="loadTransactions()">MUAT TRANSAKSI</button>
-    <div id="transactions"></div>
-
-    <h3>DAFTAR KEY</h3>
-    <button class="secondary" onclick="loadKeys()">MUAT DAFTAR KEY</button>
-    <div id="keysList"></div>
-
-    <h3>ATUR PESERTA ELIMINASI</h3>
-    <input id="newParticipant" placeholder="Nama peserta">
-    <button onclick="adminAddParticipant()">TAMBAH PESERTA</button>
-    <div class="row">
-      <button onclick="adminStartRound()">MULAI RONDE</button>
-      <button class="danger" onclick="adminStopGame()">STOP GAME</button>
-      <button class="secondary" onclick="adminResetGame()">RESET GAME</button>
-    </div>
+  <div class="row">
+    <button class="secondary" onclick="refreshStatus()">REFRESH STATUS</button>
+    <button class="danger" onclick="logout()">LOGOUT</button>
   </div>
 </section>
+
+<!-- GAME -->
+<section id="game" class="hidden">
+
+<nav>
+  <button onclick="showTab('elimination')">ELIMINASI</button>
+  <button onclick="showTab('timer')">TIMER</button>
+  <button onclick="showTab('mystery')">MYSTERY BOX</button>
+  <button onclick="showTab('gift')">GIFT</button>
+  <button onclick="showTab('leaderboard')">LEADERBOARD</button>
+  <button onclick="showTab('auction')">LELANG</button>
+  <button onclick="showTab('settings')">SETTING</button>
+</nav>
+
+<!-- ELIMINATION -->
+<section class="card panel active" id="tab-elimination">
+  <h2>ELIMINATION GAME</h2>
+
+  <div class="item">
+    <h3 id="roundText">RONDE 1</h3>
+    <p id="gameStatus">GAME BERHENTI</p>
+    <p id="winnerText"></p>
+  </div>
+
+  <h3>Tambah Peserta</h3>
+  <input id="playerName" placeholder="Nama peserta">
+  <button onclick="addPlayer()">TAMBAH PESERTA</button>
+
+  <div class="row">
+    <button onclick="gameAction('round/start')">MULAI RONDE</button>
+    <button onclick="gameAction('round/next')">RONDE BERIKUTNYA</button>
+  </div>
+
+  <button class="secondary" onclick="gameAction('round/stop')">HENTIKAN RONDE</button>
+
+  <h3>Tentukan Pemenang</h3>
+  <input id="winnerName" placeholder="Nama pemenang">
+  <button onclick="setWinner()">TETAPKAN PEMENANG</button>
+
+  <h3>Daftar Peserta</h3>
+  <div id="players">Memuat peserta...</div>
+
+  <button class="danger" onclick="resetGame()">RESET SELURUH GAME</button>
+</section>
+
+<!-- TIMER -->
+<section class="card panel" id="tab-timer">
+  <h2>TIMER GAME</h2>
+
+  <input id="timerSeconds" type="number" min="1" placeholder="Durasi dalam detik">
+
+  <div class="item">
+    <h1 id="timerDisplay">00:00</h1>
+    <p id="timerStatus">TIMER SIAP</p>
+  </div>
+
+  <div class="row">
+    <button onclick="startTimer()">MULAI TIMER</button>
+    <button class="secondary" onclick="pauseTimer()">PAUSE</button>
+  </div>
+
+  <button class="danger" onclick="resetTimer()">RESET TIMER</button>
+  <button class="secondary" onclick="saveTimer()">SIMPAN PENGATURAN TIMER</button>
+</section>
+
+<!-- MYSTERY BOX -->
+<section class="card panel" id="tab-mystery">
+  <h2>MYSTERY BOX</h2>
+
+  <input id="mysteryItems" placeholder="Hadiah pisahkan dengan koma">
+
+  <button onclick="saveMystery()">SIMPAN HADIAH</button>
+  <button onclick="openMystery()">BUKA MYSTERY BOX</button>
+
+  <div class="item">
+    <h3>HASIL MYSTERY BOX</h3>
+    <p id="mysteryResult">Belum dibuka.</p>
+  </div>
+</section>
+
+<!-- MANUAL GIFT -->
+<section class="card panel" id="tab-gift">
+  <h2>MANUAL GIFT</h2>
+
+  <input id="giftUser" placeholder="Nama pengguna">
+  <input id="giftName" placeholder="Nama gift">
+  <input id="giftPoints" type="number" min="0" placeholder="Jumlah poin">
+
+  <button onclick="addManualGift()">TAMBAH GIFT</button>
+
+  <div id="giftResult"></div>
+</section>
+
+<!-- LEADERBOARD -->
+<section class="card panel" id="tab-leaderboard">
+  <h2>LEADERBOARD & TIMER GIFT</h2>
+
+  <input id="leaderboardTime" type="number" placeholder="Durasi leaderboard (menit)">
+
+  <button onclick="saveLeaderboard()">SIMPAN PENGATURAN</button>
+
+  <div id="leaderboardResult"></div>
+
+  <p class="muted">Papan peringkat otomatis dari event LIVE memerlukan koneksi relay gift yang belum dipasang.</p>
+</section>
+
+<!-- AUCTION -->
+<section class="card panel" id="tab-auction">
+  <h2>AUCTION / LELANG</h2>
+
+  <input id="auctionItem" placeholder="Nama barang lelang">
+  <input id="auctionStart" type="number" placeholder="Harga awal">
+
+  <button onclick="saveAuction()">SIMPAN LELANG</button>
+  <button onclick="startAuction()">MULAI LELANG</button>
+  <button class="danger" onclick="resetAuction()">RESET LELANG</button>
+
+  <div id="auctionResult" class="item">Belum ada lelang.</div>
+</section>
+
+<!-- SETTINGS -->
+<section class="card panel" id="tab-settings">
+  <h2>GAME SETTINGS</h2>
+
+  <h3>Karakter</h3>
+  <input id="character" placeholder="Nama karakter">
+  <button onclick="saveCharacter()">SIMPAN KARAKTER</button>
+
+  <h3>Background</h3>
+  <input id="background" placeholder="Nama background">
+  <button onclick="saveBackground()">SIMPAN BACKGROUND</button>
+
+  <h3>TikTok Host</h3>
+  <input id="hostName" placeholder="Username host TikTok">
+  <button onclick="saveHost()">SIMPAN HOST</button>
+
+  <p class="muted">
+    Pengaturan host hanya menyimpan username. Koneksi LIVE dan gift otomatis membutuhkan relay/provider tambahan.
+  </p>
+</section>
+
+</section>
+
+<footer>
+  ZANN ELIMINASI VIP • GAME CONTROL SYSTEM
+</footer>
+
 </main>
 
-<footer>ZANN ELIMINASI VIP</footer>
-
 <script>
-let token = localStorage.getItem("zvip_token") || "";
-let role = localStorage.getItem("zvip_role") || "";
-let gameRefresh = null;
+let token = "";
+let timerInterval = null;
+let remainingSeconds = 0;
+let timerPaused = true;
 
-function show(id) {
-  document.querySelectorAll("main section").forEach(s => s.classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
-  if (id === "dashboard") checkStatus();
-}
-function message(text) {
-  const el = document.getElementById("authMessage");
-  el.textContent = text;
-  el.classList.remove("hidden");
-}
-function money(n) {
-  return "Rp" + Number(n).toLocaleString("id-ID");
-}
-async function api(url, method="GET", data) {
-  const headers = { "Content-Type":"application/json" };
-  if (token) headers.Authorization = "Bearer " + token;
+async function api(url, options = {}) {
   const response = await fetch(url, {
-    method,
-    headers,
-    body: data === undefined ? undefined : JSON.stringify(data)
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? {"Authorization": "Bearer " + token} : {}),
+      ...(options.headers || {})
+    }
   });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error || "Permintaan gagal.");
-  return result;
-}
-function pick(plan) {
-  document.getElementById("buyPlan").value = plan;
-  show("store");
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    if (response.status === 401) logout();
+    throw new Error(data.error || "Terjadi kesalahan");
+  }
+
+  return data;
 }
 
-// STORE TANPA LOGIN
+function showTab(name) {
+  document.querySelectorAll(".panel").forEach(el => {
+    el.classList.remove("active");
+  });
+
+  document.getElementById("tab-" + name).classList.add("active");
+}
+
 async function checkout() {
   try {
-    const result = await api("/api/store/checkout", "POST", {
-      plan: document.getElementById("buyPlan").value,
-      quantity: Number(document.getElementById("buyQty").value)
+    const data = await api("/api/store/checkout", {
+      method: "POST",
+      body: JSON.stringify({
+        username: document.getElementById("buyer").value,
+        plan: document.getElementById("buyPlan").value,
+        quantity: Number(document.getElementById("buyCount").value)
+      })
     });
 
-    const target = document.getElementById("checkoutResult");
-    target.replaceChildren();
+    const result = document.getElementById("checkoutResult");
+    result.classList.remove("hidden");
 
-    const box = document.createElement("div");
-    box.className = "notice";
-
-    const lines = [
-      "PESANAN BERHASIL DIBUAT",
-      "Nomor transaksi: " + result.transactionId,
-      "Paket: " + result.plan,
-      "Jumlah KEY: " + result.quantity,
-      "Total: " + money(result.total),
-      "Transfer ke: " + result.destination,
-      "Status: MENUNGGU VERIFIKASI",
-      "",
-      "Setelah pembayaran benar-benar diterima, admin akan menyetujui transaksi dan server membuat KEY sesuai pesanan."
-    ];
-    box.textContent = lines.join("\n");
-    target.appendChild(box);
-  } catch(e) {
-    alert(e.message);
+    result.textContent =
+      "PESANAN DIBUAT\n" +
+      "ID TRANSAKSI: " + data.transactionId + "\n" +
+      "NAMA: " + data.username + "\n" +
+      "PAKET: " + data.plan + "\n" +
+      "JUMLAH: " + data.quantity + "\n" +
+      "TOTAL: Rp" + data.amount.toLocaleString("id-ID") + "\n\n" +
+      "TRANSFER KE: " + data.destination + "\n\n" +
+      "Status: MENUNGGU PEMERIKSAAN ADMIN.";
+  } catch(error) {
+    alert(error.message);
   }
 }
 
-// AUTH
 async function register() {
   try {
-    await api("/api/register", "POST", {
-      username: document.getElementById("registerUsername").value,
-      password: document.getElementById("registerPassword").value
+    await api("/api/register", {
+      method: "POST",
+      body: JSON.stringify({
+        username: document.getElementById("username").value,
+        password: document.getElementById("password").value
+      })
     });
-    message("Akun berhasil dibuat. Silakan login.");
-  } catch(e) {
-    message(e.message);
+
+    document.getElementById("accountMessage").textContent =
+      "Registrasi berhasil. Silakan login.";
+  } catch(error) {
+    document.getElementById("accountMessage").textContent = error.message;
   }
 }
+
 async function login() {
   try {
-    const result = await api("/api/login", "POST", {
-      username: document.getElementById("loginUsername").value,
-      password: document.getElementById("loginPassword").value
+    const data = await api("/api/login", {
+      method: "POST",
+      body: JSON.stringify({
+        username: document.getElementById("username").value,
+        password: document.getElementById("password").value
+      })
     });
-    token = result.token;
-    role = result.role;
-    localStorage.setItem("zvip_token", token);
-    localStorage.setItem("zvip_role", role);
-    show("dashboard");
-  } catch(e) {
-    message(e.message);
+
+    token = data.token;
+
+    document.getElementById("account").classList.add("hidden");
+    document.getElementById("vip").classList.remove("hidden");
+
+    await refreshStatus();
+  } catch(error) {
+    document.getElementById("accountMessage").textContent = error.message;
   }
 }
-function logout() {
-  token = "";
-  role = "";
-  localStorage.removeItem("zvip_token");
-  localStorage.removeItem("zvip_role");
-  if (gameRefresh) clearInterval(gameRefresh);
-  show("home");
-}
 
-// MEMBERSHIP
-async function checkStatus() {
-  if (!token) {
-    document.getElementById("status").textContent = "Login diperlukan untuk menggunakan game.";
-    document.getElementById("redeemArea").classList.remove("hidden");
-    document.getElementById("gameArea").classList.add("hidden");
-    document.getElementById("adminArea").classList.add("hidden");
-    return;
-  }
-
-  try {
-    const s = await api("/api/key/status");
-
-    if (role === "admin") {
-      document.getElementById("status").textContent = "ADMIN LOGIN — akses panel admin.";
-      document.getElementById("adminArea").classList.remove("hidden");
-      document.getElementById("redeemArea").classList.add("hidden");
-      document.getElementById("gameArea").classList.remove("hidden");
-      await refreshGame();
-      return;
-    }
-
-    document.getElementById("adminArea").classList.add("hidden");
-
-    if (!s.active) {
-      document.getElementById("status").textContent = "KEY belum aktif atau sudah kedaluwarsa.";
-      document.getElementById("redeemArea").classList.remove("hidden");
-      document.getElementById("gameArea").classList.add("hidden");
-      return;
-    }
-
-    document.getElementById("redeemArea").classList.add("hidden");
-    document.getElementById("gameArea").classList.remove("hidden");
-
-    document.getElementById("status").textContent = s.permanent
-      ? "KEY PERMANEN AKTIF — tidak kedaluwarsa."
-      : "KEY AKTIF — berakhir " + new Date(s.expiresAt).toLocaleString("id-ID");
-
-    await refreshGame();
-
-    if (gameRefresh) clearInterval(gameRefresh);
-    gameRefresh = setInterval(refreshGame, 10000);
-  } catch(e) {
-    document.getElementById("status").textContent = e.message;
-    if (e.message.includes("login")) logout();
-  }
-}
 async function redeem() {
   try {
-    await api("/api/key/redeem", "POST", {
-      code: document.getElementById("redeemCode").value
+    await api("/api/key/redeem", {
+      method: "POST",
+      body: JSON.stringify({
+        code: document.getElementById("keyCode").value
+      })
     });
+
     alert("KEY berhasil diaktifkan.");
-    checkStatus();
-  } catch(e) {
-    alert(e.message);
+    await refreshStatus();
+  } catch(error) {
+    alert(error.message);
   }
 }
 
-// GAME
-async function refreshGame() {
+async function refreshStatus() {
+  if (!token) return;
+
   try {
-    const g = await api("/api/game/state");
-    document.getElementById("round").textContent = g.round;
-    const active = g.participants.filter(p => p.status === "ACTIVE");
-    const eliminated = g.participants.filter(p => p.status === "ELIMINATED");
-    document.getElementById("activeCount").textContent = active.length;
-    document.getElementById("outCount").textContent = eliminated.length;
-    document.getElementById("timer").textContent = g.running ? "RONDE BERJALAN" : "MODE SIAP";
+    const data = await api("/api/key/status");
 
-    const list = document.getElementById("participants");
-    list.replaceChildren();
+    if (!data.active) {
+      document.getElementById("game").classList.add("hidden");
+      document.getElementById("keyStatus").textContent =
+        data.expired ? "KEY SUDAH KEDALUWARSA" : "BELUM ADA KEY AKTIF";
+      return;
+    }
 
-    g.participants.forEach(p => {
-      const row = document.createElement("div");
-      row.className = "item";
-      const label = document.createElement("span");
-      label.textContent = p.name + " — " + p.status;
-      row.appendChild(label);
+    document.getElementById("keyStatus").textContent =
+      data.permanent
+        ? "VIP PERMANEN AKTIF"
+        : "VIP AKTIF SAMPAI " +
+          new Date(data.expiresAt).toLocaleString("id-ID");
 
-      if (role === "admin" && p.status === "ACTIVE") {
-        const btn = document.createElement("button");
-        btn.className = "danger";
-        btn.textContent = "ELIMINASI";
-        btn.onclick = () => eliminate(p.id);
-        row.appendChild(btn);
+    document.getElementById("game").classList.remove("hidden");
+
+    await loadGame();
+  } catch(error) {
+    document.getElementById("keyStatus").textContent = error.message;
+  }
+}
+
+async function loadGame() {
+  const data = await api("/api/game/state");
+
+  document.getElementById("roundText").textContent =
+    "RONDE " + data.round;
+
+  document.getElementById("gameStatus").textContent =
+    data.running ? "GAME BERJALAN" : "GAME BERHENTI";
+
+  document.getElementById("winnerText").textContent =
+    data.winner ? "PEMENANG: " + data.winner : "";
+
+  document.getElementById("players").innerHTML =
+    data.participants.map(p => `
+      <div class="item">
+        <b>${escapeHTML(p.name)}</b>
+        <p>Status: ${escapeHTML(p.status)}</p>
+        ${p.status === "ACTIVE"
+          ? `<button onclick="playerAction('eliminate/${p.id}')">ELIMINASI</button>`
+          : `<button onclick="playerAction('restore/${p.id}')">PULIHKAN</button>`}
+      </div>
+    `).join("") || "Belum ada peserta.";
+}
+
+async function addPlayer() {
+  try {
+    await api("/api/game/participant", {
+      method: "POST",
+      body: JSON.stringify({
+        name: document.getElementById("playerName").value
+      })
+    });
+
+    document.getElementById("playerName").value = "";
+    await loadGame();
+  } catch(error) {
+    alert(error.message);
+  }
+}
+
+async function playerAction(action) {
+  try {
+    await api("/api/game/" + action, {
+      method: "POST",
+      body: "{}"
+    });
+
+    await loadGame();
+  } catch(error) {
+    alert(error.message);
+  }
+}
+
+async function gameAction(action) {
+  try {
+    await api("/api/game/" + action, {
+      method: "POST",
+      body: "{}"
+    });
+
+    await loadGame();
+  } catch(error) {
+    alert(error.message);
+  }
+}
+
+async function setWinner() {
+  try {
+    await api("/api/game/winner", {
+      method: "POST",
+      body: JSON.stringify({
+        name: document.getElementById("winnerName").value
+      })
+    });
+
+    await loadGame();
+  } catch(error) {
+    alert(error.message);
+  }
+}
+
+async function resetGame() {
+  if (!confirm("Yakin reset semua peserta dan ronde?")) return;
+
+  try {
+    await api("/api/game/reset", {
+      method: "POST",
+      body: "{}"
+    });
+
+    await loadGame();
+  } catch(error) {
+    alert(error.message);
+  }
+}
+
+/* TIMER */
+
+function updateTimerDisplay() {
+  const min = Math.floor(remainingSeconds / 60);
+  const sec = remainingSeconds % 60;
+
+  document.getElementById("timerDisplay").textContent =
+    String(min).padStart(2, "0") + ":" +
+    String(sec).padStart(2, "0");
+}
+
+function startTimer() {
+  if (timerInterval) return;
+
+  if (timerPaused) {
+    if (remainingSeconds <= 0) {
+      remainingSeconds = Number(
+        document.getElementById("timerSeconds").value
+      );
+
+      if (!Number.isInteger(remainingSeconds) || remainingSeconds < 1) {
+        alert("Masukkan durasi timer yang benar.");
+        return;
       }
-
-      list.appendChild(row);
-    });
-
-    const winner = document.getElementById("winner");
-    winner.classList.add("hidden");
-    if (g.modules.elimination?.winner) {
-      winner.textContent = "Pemenang: " + g.modules.elimination.winner.name;
-      winner.classList.remove("hidden");
     }
-  } catch(e) {
-    if (e.message.includes("KEY")) {
-      document.getElementById("status").textContent = "KEY habis. Akses game dihentikan.";
-      document.getElementById("gameArea").classList.add("hidden");
-      document.getElementById("redeemArea").classList.remove("hidden");
-      if (gameRefresh) clearInterval(gameRefresh);
-    } else {
-      console.log(e.message);
+  }
+
+  timerPaused = false;
+  document.getElementById("timerStatus").textContent = "TIMER BERJALAN";
+
+  timerInterval = setInterval(() => {
+    remainingSeconds--;
+    updateTimerDisplay();
+
+    if (remainingSeconds <= 0) {
+      pauseTimer();
+      document.getElementById("timerStatus").textContent = "WAKTU HABIS";
+      alert("Waktu timer selesai!");
     }
+  }, 1000);
+}
+
+function pauseTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerPaused = true;
+  document.getElementById("timerStatus").textContent = "TIMER PAUSE";
+}
+
+function resetTimer() {
+  pauseTimer();
+  remainingSeconds = 0;
+  updateTimerDisplay();
+  document.getElementById("timerStatus").textContent = "TIMER SIAP";
+}
+
+async function saveTimer() {
+  try {
+    const seconds = Number(document.getElementById("timerSeconds").value);
+
+    if (!Number.isInteger(seconds) || seconds < 1) {
+      alert("Masukkan durasi timer yang benar.");
+      return;
+    }
+
+    await saveModule("timer", {seconds});
+  } catch(error) {
+    alert(error.message);
   }
 }
 
-// ADMIN GAME CONTROL
-async function adminAddParticipant() {
+/* MYSTERY BOX */
+
+async function saveMystery() {
   try {
-    await api("/api/admin/game/participants", "POST", {
-      name: document.getElementById("newParticipant").value
-    });
-    document.getElementById("newParticipant").value = "";
-    refreshGame();
-  } catch(e) { alert(e.message); }
-}
-async function eliminate(id) {
-  try {
-    await api("/api/admin/game/participants/" + id + "/eliminate", "POST", {});
-    refreshGame();
-  } catch(e) { alert(e.message); }
-}
-async function adminStartRound() {
-  try {
-    const r = await api("/api/admin/game/start-round", "POST", {});
-    alert("Ronde " + r.round + " dimulai.");
-    refreshGame();
-  } catch(e) { alert(e.message); }
-}
-async function adminStopGame() {
-  try {
-    await api("/api/admin/game/stop", "POST", {});
-    refreshGame();
-  } catch(e) { alert(e.message); }
-}
-async function adminResetGame() {
-  if (!confirm("Reset seluruh status peserta dan ronde?")) return;
-  try {
-    await api("/api/admin/game/reset", "POST", {});
-    refreshGame();
-  } catch(e) { alert(e.message); }
+    const items = document.getElementById("mysteryItems").value
+      .split(",")
+      .map(x => x.trim())
+      .filter(Boolean);
+
+    if (!items.length) {
+      alert("Masukkan hadiah terlebih dahulu.");
+      return;
+    }
+
+    await saveModule("mysteryBox", {items});
+  } catch(error) {
+    alert(error.message);
+  }
 }
 
-// MODULES
-async function saveModule(name, data) {
-  await api("/api/game/module/" + name, "PUT", { data });
-  alert("Pengaturan " + name + " tersimpan.");
-}
-function saveTimer() {
-  saveModule("timer", {
-    seconds: Number(document.getElementById("timerSeconds").value),
-    updatedAt: Date.now()
-  }).catch(e => alert(e.message));
-}
-function saveMystery() {
-  const count = Math.max(1, Math.min(100, Number(document.getElementById("boxCount").value)));
-  saveModule("mysteryBox", {
-    boxes: Array.from({length:count}, (_,i) => ({
-      number:i+1,
-      prize:document.getElementById("boxPrize").value,
-      opened:false
-    }))
-  }).catch(e => alert(e.message));
-}
-async function saveGift() {
+async function openMystery() {
   try {
-    const gift = {
-      name:document.getElementById("giftName").value,
-      value:Number(document.getElementById("giftValue").value),
-      time:Date.now()
+    const data = await api("/api/modules/mysteryBox");
+
+    if (!data.data.items || !data.data.items.length) {
+      alert("Atur hadiah Mystery Box terlebih dahulu.");
+      return;
+    }
+
+    const index = Math.floor(Math.random() * data.data.items.length);
+
+    document.getElementById("mysteryResult").textContent =
+      "HADIAH: " + data.data.items[index];
+  } catch(error) {
+    alert(error.message);
+  }
+}
+
+/* MANUAL GIFT */
+
+async function addManualGift() {
+  try {
+    const data = {
+      user: document.getElementById("giftUser").value,
+      name: document.getElementById("giftName").value,
+      points: Number(document.getElementById("giftPoints").value)
     };
-    await saveModule("manualGift", { lastGift:gift });
-  } catch(e) { alert(e.message); }
+
+    if (!data.user || !data.name || !Number.isFinite(data.points) || data.points < 0) {
+      alert("Lengkapi data gift.");
+      return;
+    }
+
+    const old = await api("/api/modules/manualGift");
+    const gifts = old.data.gifts || [];
+
+    gifts.push({...data, time: new Date().toISOString()});
+
+    await saveModule("manualGift", {gifts});
+
+    document.getElementById("giftResult").textContent =
+      "Gift berhasil ditambahkan.";
+  } catch(error) {
+    alert(error.message);
+  }
 }
-function saveLeaderboard() {
-  saveModule("leaderboard", {
-    name:document.getElementById("leaderName").value,
-    score:Number(document.getElementById("leaderScore").value)
-  }).catch(e => alert(e.message));
+
+/* LEADERBOARD */
+
+async function saveLeaderboard() {
+  try {
+    const durationMinutes = Number(
+      document.getElementById("leaderboardTime").value
+    );
+
+    if (!Number.isFinite(durationMinutes) || durationMinutes < 1) {
+      alert("Masukkan durasi leaderboard.");
+      return;
+    }
+
+    await saveModule("leaderboard", {durationMinutes});
+
+    document.getElementById("leaderboardResult").textContent =
+      "Durasi leaderboard tersimpan: " + durationMinutes + " menit.";
+  } catch(error) {
+    alert(error.message);
+  }
 }
-function saveAuction(running) {
-  saveModule("auction", {
-    running,
-    item:running ? document.getElementById("auctionItem").value : "",
-    highestBid:running ? Number(document.getElementById("auctionBid").value) : 0
-  }).catch(e => alert(e.message));
+
+/* AUCTION */
+
+async function saveAuction() {
+  try {
+    const item = document.getElementById("auctionItem").value;
+    const startPrice = Number(document.getElementById("auctionStart").value);
+
+    if (!item || !Number.isFinite(startPrice) || startPrice < 0) {
+      alert("Lengkapi data lelang.");
+      return;
+    }
+
+    await saveModule("auction", {
+      item,
+      startPrice,
+      running: false
+    });
+
+    document.getElementById("auctionResult").textContent =
+      "Barang: " + item + " | Harga awal: Rp" + startPrice;
+  } catch(error) {
+    alert(error.message);
+  }
 }
-function saveCharacter() {
-  saveModule("characters", {
-    selected:document.getElementById("character").value,
-    background:document.getElementById("background").value
-  }).catch(e => alert(e.message));
+
+async function startAuction() {
+  try {
+    const item = document.getElementById("auctionItem").value;
+    const startPrice = Number(document.getElementById("auctionStart").value);
+
+    if (!item || !Number.isFinite(startPrice) || startPrice < 0) {
+      alert("Lengkapi barang dan harga awal.");
+      return;
+    }
+
+    await saveModule("auction", {
+      item,
+      startPrice,
+      running: true
+    });
+
+    document.getElementById("auctionResult").textContent =
+      "LELANG BERJALAN: " + item;
+  } catch(error) {
+    alert(error.message);
+  }
 }
+
+async function resetAuction() {
+  try {
+    await saveModule("auction", {
+      item: "",
+      startPrice: 0,
+      running: false
+    });
+
+    document.getElementById("auctionResult").textContent =
+      "LELANG SUDAH DIRESET.";
+  } catch(error) {
+    alert(error.message);
+  }
+}
+
+/* SETTINGS */
+
+async function saveCharacter() {
+  try {
+    await saveModule("characters", {
+      selected: document.getElementById("character").value
+    });
+  } catch(error) {
+    alert(error.message);
+  }
+}
+
+async function saveBackground() {
+  try {
+    await saveModule("backgrounds", {
+      selected: document.getElementById("background").value
+    });
+  } catch(error) {
+    alert(error.message);
+  }
+}
+
 async function saveHost() {
   try {
     await saveModule("hostSettings", {
-      hostId:document.getElementById("hostId").value,
-      username:document.getElementById("hostUsername").value,
-      status:"NOT_CONNECTED"
+      host: document.getElementById("hostName").value
     });
-  } catch(e) { alert(e.message); }
+  } catch(error) {
+    alert(error.message);
+  }
 }
 
-// ADMIN KEY MANAGEMENT
-async function adminCreateKeys() {
-  try {
-    const result = await api("/api/admin/keys/create", "POST", {
-      plan:document.getElementById("adminPlan").value,
-      quantity:Number(document.getElementById("adminQty").value)
-    });
-    document.getElementById("createdKeys").textContent =
-      "Berhasil membuat " + result.quantity + " KEY:\n\n" +
-      result.codes.join("\n");
-    loadKeys();
-  } catch(e) { alert(e.message); }
-}
-async function loadTransactions() {
-  try {
-    const rows = await api("/api/admin/transactions");
-    const box = document.getElementById("transactions");
-    box.replaceChildren();
+async function saveModule(name, data) {
+  await api("/api/modules/" + name, {
+    method: "PUT",
+    body: JSON.stringify(data)
+  });
 
-    rows.forEach(tx => {
-      const row = document.createElement("div");
-      row.className = "item";
-
-      const info = document.createElement("span");
-      info.textContent = "#" + tx.id + " | " + tx.plan +
-        " | " + tx.quantity + " KEY | " + money(tx.total) +
-        " | " + tx.status;
-      row.appendChild(info);
-
-      if (tx.status === "PENDING") {
-        const btn = document.createElement("button");
-        btn.textContent = "VERIFIKASI & TERBITKAN KEY";
-        btn.onclick = () => approveTransaction(tx.id);
-        row.appendChild(btn);
-      }
-      box.appendChild(row);
-    });
-  } catch(e) { alert(e.message); }
-}
-async function approveTransaction(id) {
-  if (!confirm("Pastikan transfer benar-benar sudah masuk. Terbitkan KEY sekarang?")) return;
-  try {
-    const result = await api("/api/admin/transactions/" + id + "/approve", "POST", {});
-    alert("KEY untuk pembeli:\n\n" + result.keys.join("\n"));
-    loadTransactions();
-    loadKeys();
-  } catch(e) { alert(e.message); }
-}
-async function loadKeys() {
-  try {
-    const rows = await api("/api/admin/keys");
-    const box = document.getElementById("keysList");
-    box.replaceChildren();
-    rows.forEach(k => {
-      const row = document.createElement("div");
-      row.className = "item";
-      row.textContent = k.code + " | " + k.plan + " | " + k.status;
-      box.appendChild(row);
-    });
-  } catch(e) { alert(e.message); }
+  alert("Pengaturan berhasil disimpan.");
 }
 
-if (token) show("dashboard");
-else show("home");
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, c => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  })[c]);
+}
+
+function logout() {
+  token = "";
+
+  pauseTimer();
+
+  document.getElementById("account").classList.remove("hidden");
+  document.getElementById("vip").classList.add("hidden");
+  document.getElementById("game").classList.add("hidden");
+}
+
+setInterval(() => {
+  if (token) refreshStatus();
+}, 10000);
 </script>
+
 </body>
 </html>
