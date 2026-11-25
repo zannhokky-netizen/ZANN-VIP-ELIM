@@ -1,0 +1,500 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZANN ELIMINASI VIP</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;background:#090b12;color:#f5f5f5;
+  font-family:Arial,sans-serif
+}
+header{
+  padding:22px 16px;text-align:center;
+  background:linear-gradient(135deg,#111827,#151022);
+  border-bottom:1px solid #292d3b
+}
+header h1{margin:0;color:#a78bfa;font-size:24px}
+header p{color:#9299ab;font-size:13px}
+main{max-width:950px;margin:auto;padding:15px}
+.card{
+  background:#121622;border:1px solid #252b3c;
+  border-radius:14px;padding:16px;margin-bottom:15px
+}
+h2{font-size:17px;margin-top:0;color:#c4b5fd}
+input,select{
+  width:100%;padding:12px;margin:6px 0;
+  background:#090d17;color:white;
+  border:1px solid #30364a;border-radius:9px
+}
+button{
+  padding:11px 14px;border:0;border-radius:9px;
+  margin:4px 2px;background:#7c3aed;color:white;
+  font-weight:bold;cursor:pointer
+}
+button:hover{opacity:.85}
+.red{background:#dc2626}
+.gray{background:#374151}
+.green{background:#059669}
+.orange{background:#d97706}
+.item{
+  background:#0b0f19;border:1px solid #242b3a;
+  padding:12px;border-radius:10px;margin:8px 0
+}
+.row{
+  display:flex;justify-content:space-between;
+  gap:8px;align-items:center;flex-wrap:wrap
+}
+.small{font-size:12px;color:#9ca3af}
+.stat{
+  font-size:30px;font-weight:bold;color:#a78bfa
+}
+.hidden{display:none!important}
+#status{color:#a78bfa;font-size:13px}
+</style>
+</head>
+<body>
+
+<header>
+<h1>ZANN ELIMINASI VIP</h1>
+<p>VIP Game Control Panel</p>
+<div id="status">Backend belum terkoneksi</div>
+</header>
+
+<main>
+
+<!-- KONEKSI -->
+<div class="card">
+<h2>Pengaturan Koneksi</h2>
+<input id="apiUrl" placeholder="URL Backend Railway (https://...)">
+<button onclick="saveUrl()">Hubungkan Backend</button>
+<p class="small">Masukkan URL backend Node.js kamu.</p>
+</div>
+
+<!-- LOGIN -->
+<div class="card" id="loginBox">
+<h2>Admin Login</h2>
+<input id="password" type="password" placeholder="Password admin">
+<button onclick="login()">Login Admin</button>
+</div>
+
+<div id="adminPanel" class="hidden">
+
+<!-- STAT -->
+<div class="card">
+<h2>Statistik Game</h2>
+<div class="row">
+<div>
+<div class="small">Peserta Aktif</div>
+<div class="stat" id="total">0</div>
+</div>
+<div>
+<div class="small">Tereliminasi</div>
+<div class="stat" id="eliminatedTotal">0</div>
+</div>
+</div>
+<button class="red" onclick="resetGame()">RESET GAME</button>
+<button class="gray" onclick="logout()">Logout</button>
+</div>
+
+<!-- PESERTA -->
+<div class="card">
+<h2>Tambah Peserta</h2>
+<input id="username" placeholder="Username peserta">
+<button onclick="addParticipant()">Tambah Peserta</button>
+</div>
+
+<div class="card">
+<h2>Peserta Aktif</h2>
+<div id="participants"></div>
+</div>
+
+<div class="card">
+<h2>Peserta Tereliminasi</h2>
+<div id="eliminated"></div>
+</div>
+
+<!-- TIMER -->
+<div class="card">
+<h2>Timer Game</h2>
+<input id="timerMinutes" type="number" min="1" placeholder="Durasi menit">
+<button onclick="timerAction('start')">MULAI</button>
+<button class="orange" onclick="timerAction('stop')">STOP</button>
+<button class="gray" onclick="timerAction('reset')">RESET</button>
+<div class="stat" id="timerDisplay">00:00</div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="card">
+<h2>Leaderboard</h2>
+<div id="leaderboard"></div>
+</div>
+
+<!-- LELANG -->
+<div class="card">
+<h2>Kontrol Lelang</h2>
+<button class="green" onclick="auctionAction('start')">MULAI LELANG</button>
+<button class="orange" onclick="auctionAction('stop')">STOP LELANG</button>
+<button class="red" onclick="auctionAction('reset')">RESET LELANG</button>
+
+<input id="auctionName" placeholder="Username">
+<input id="auctionValue" type="number" placeholder="Nilai entry">
+<button onclick="auctionEntry()">Tambah Entry</button>
+
+<div id="auctionEntries"></div>
+</div>
+
+<!-- MYSTERY -->
+<div class="card">
+<h2>Mystery Box</h2>
+<button class="green" onclick="mysteryAction('start')">AKTIFKAN</button>
+<button class="orange" onclick="mysteryAction('stop')">STOP</button>
+<button class="gray" onclick="mysteryAction('reset')">RESET</button>
+
+<select id="mysteryUser"></select>
+<button onclick="mysteryReward()">BUKA MYSTERY BOX</button>
+<p id="mysteryResult"></p>
+</div>
+
+<!-- RIWAYAT -->
+<div class="card">
+<h2>Riwayat Game</h2>
+<div id="history"></div>
+</div>
+
+</div>
+</main>
+
+<script>
+let API = "";
+let TOKEN = "";
+let GAME = null;
+
+function saveUrl(){
+  API = document.getElementById("apiUrl").value.trim().replace(/\/+$/,"");
+  if(!API){
+    alert("Masukkan URL backend");
+    return;
+  }
+  document.getElementById("status").innerText="URL tersimpan";
+  checkBackend();
+}
+
+async function request(path, options={}){
+  const headers={
+    "Content-Type":"application/json",
+    ...(options.headers||{})
+  };
+
+  if(TOKEN) headers.Authorization="Bearer "+TOKEN;
+
+  const response=await fetch(API+path,{
+    ...options,
+    headers
+  });
+
+  const data=await response.json().catch(()=>({}));
+
+  if(!response.ok){
+    throw new Error(data.error||"Request gagal");
+  }
+
+  return data;
+}
+
+async function checkBackend(){
+  if(!API)return;
+  try{
+    await request("/api/status");
+    document.getElementById("status").innerText="Backend ONLINE";
+  }catch(e){
+    document.getElementById("status").innerText="Backend tidak terhubung";
+  }
+}
+
+async function login(){
+  try{
+    const data=await request("/api/admin/login",{
+      method:"POST",
+      body:JSON.stringify({
+        password:document.getElementById("password").value
+      })
+    });
+
+    TOKEN=data.token;
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("adminPanel").classList.remove("hidden");
+    document.getElementById("status").innerText="Admin aktif";
+
+    await refresh();
+  }catch(e){
+    alert(e.message);
+  }
+}
+
+function logout(){
+  TOKEN="";
+  GAME=null;
+  document.getElementById("adminPanel").classList.add("hidden");
+  document.getElementById("loginBox").classList.remove("hidden");
+  document.getElementById("password").value="";
+}
+
+async function refresh(){
+  if(!TOKEN)return;
+
+  try{
+    GAME=await request("/api/game");
+    const history=await request("/api/history");
+
+    renderGame();
+    renderHistory(history);
+  }catch(e){
+    document.getElementById("status").innerText=e.message;
+  }
+}
+
+function renderGame(){
+  if(!GAME)return;
+
+  document.getElementById("total").innerText=GAME.participants.length;
+  document.getElementById("eliminatedTotal").innerText=GAME.eliminated.length;
+
+  document.getElementById("participants").innerHTML=
+    GAME.participants.map(p=>`
+      <div class="item">
+        <div class="row">
+          <div>
+            <b>${esc(p.username)}</b>
+            <div class="small">Skor: ${p.score}</div>
+          </div>
+          <button class="red" onclick="eliminate('${p.id}')">ELIMINASI</button>
+        </div>
+      </div>
+    `).join("")||"<p class='small'>Belum ada peserta</p>";
+
+  document.getElementById("eliminated").innerHTML=
+    GAME.eliminated.map(p=>`
+      <div class="item">
+        <div class="row">
+          <div>
+            <b>${esc(p.username)}</b>
+            <div class="small">Skor: ${p.score}</div>
+          </div>
+          <button class="green" onclick="restore('${p.id}')">PULIHKAN</button>
+        </div>
+      </div>
+    `).join("")||"<p class='small'>Belum ada peserta tereliminasi</p>";
+
+  document.getElementById("leaderboard").innerHTML=
+    [...GAME.participants]
+    .sort((a,b)=>b.score-a.score)
+    .map((p,i)=>`
+      <div class="item row">
+        <div><b>#${i+1} ${esc(p.username)}</b></div>
+        <div>${p.score} poin</div>
+        <button onclick="score('${p.id}',1)">+1</button>
+        <button class="red" onclick="score('${p.id}',-1)">-1</button>
+      </div>
+    `).join("")||"<p class='small'>Leaderboard kosong</p>";
+
+  document.getElementById("mysteryUser").innerHTML=
+    GAME.participants.map(p=>`
+      <option value="${p.id}">${esc(p.username)}</option>
+    `).join("");
+
+  document.getElementById("auctionEntries").innerHTML=
+    GAME.auction.entries.slice().reverse().map(e=>`
+      <div class="item">
+        <b>${esc(e.username)}</b> — ${e.value}
+      </div>
+    `).join("")||"<p class='small'>Belum ada entry</p>";
+
+  const seconds=GAME.timer.remaining||0;
+  document.getElementById("timerDisplay").innerText=
+    formatTime(seconds);
+}
+
+function renderHistory(history){
+  document.getElementById("history").innerHTML=
+    history.slice(0,30).map(h=>`
+      <div class="item">
+        <b>${esc(h.action)}</b>
+        <div class="small">${esc(JSON.stringify(h.details||{}))}</div>
+        <div class="small">${esc(h.timestamp)}</div>
+      </div>
+    `).join("")||"<p class='small'>Belum ada riwayat</p>";
+}
+
+function formatTime(sec){
+  sec=Math.max(0,Math.floor(sec));
+  const m=Math.floor(sec/60);
+  const s=sec%60;
+  return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+}
+
+function esc(v){
+  return String(v??"").replace(/[&<>"']/g,c=>({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  }[c]));
+}
+
+async function addParticipant(){
+  const username=document.getElementById("username").value.trim();
+  if(!username)return alert("Masukkan username");
+
+  try{
+    await request("/api/admin/participants",{
+      method:"POST",
+      body:JSON.stringify({username})
+    });
+    document.getElementById("username").value="";
+    await refresh();
+  }catch(e){alert(e.message)}
+}
+
+async function eliminate(id){
+  if(!confirm("Eliminasi peserta ini?"))return;
+  try{
+    await request("/api/admin/eliminate",{
+      method:"POST",
+      body:JSON.stringify({id})
+    });
+    await refresh();
+  }catch(e){alert(e.message)}
+}
+
+async function restore(id){
+  try{
+    await request("/api/admin/restore",{
+      method:"POST",
+      body:JSON.stringify({id})
+    });
+    await refresh();
+  }catch(e){alert(e.message)}
+}
+
+async function resetGame(){
+  if(!confirm("Reset seluruh data game?"))return;
+  try{
+    await request("/api/admin/reset",{
+      method:"POST",
+      body:JSON.stringify({})
+    });
+    await refresh();
+  }catch(e){alert(e.message)}
+}
+
+async function timerAction(action){
+  const minutes=Number(document.getElementById("timerMinutes").value);
+
+  const body={action};
+
+  if(action==="start"||action==="reset"){
+    if(!Number.isFinite(minutes)||minutes<=0){
+      return alert("Masukkan menit timer");
+    }
+    body.seconds=Math.floor(minutes*60);
+  }
+
+  try{
+    await request("/api/admin/timer",{
+      method:"POST",
+      body:JSON.stringify(body)
+    });
+    await refresh();
+  }catch(e){alert(e.message)}
+}
+
+async function score(id,points){
+  try{
+    await request("/api/admin/score",{
+      method:"POST",
+      body:JSON.stringify({id,points})
+    });
+    await refresh();
+  }catch(e){alert(e.message)}
+}
+
+async function auctionAction(action){
+  try{
+    await request("/api/admin/auction",{
+      method:"POST",
+      body:JSON.stringify({action})
+    });
+    await refresh();
+  }catch(e){alert(e.message)}
+}
+
+async function auctionEntry(){
+  const username=document.getElementById("auctionName").value.trim();
+  const value=Number(document.getElementById("auctionValue").value);
+
+  if(!username)return alert("Masukkan username");
+
+  try{
+    await request("/api/admin/auction/entry",{
+      method:"POST",
+      body:JSON.stringify({username,value})
+    });
+
+    document.getElementById("auctionName").value="";
+    document.getElementById("auctionValue").value="";
+    await refresh();
+  }catch(e){alert(e.message)}
+}
+
+async function mysteryAction(action){
+  try{
+    await request("/api/admin/mystery",{
+      method:"POST",
+      body:JSON.stringify({action})
+    });
+    await refresh();
+  }catch(e){alert(e.message)}
+}
+
+async function mysteryReward(){
+  const id=document.getElementById("mysteryUser").value;
+  if(!id)return alert("Pilih peserta");
+
+  try{
+    const data=await request("/api/admin/mystery/reward",{
+      method:"POST",
+      body:JSON.stringify({id})
+    });
+
+    document.getElementById("mysteryResult").innerText=
+      data.username+" mendapatkan "+data.reward+" poin!";
+
+    await refresh();
+  }catch(e){alert(e.message)}
+}
+
+setInterval(()=>{
+  if(GAME&&GAME.timer.running){
+    const remaining=Math.max(
+      0,
+      GAME.timer.remaining-Math.floor((Date.now()-lastRefresh)/1000)
+    );
+    document.getElementById("timerDisplay").innerText=formatTime(remaining);
+  }
+},1000);
+
+let lastRefresh=Date.now();
+
+setInterval(async()=>{
+  if(TOKEN){
+    lastRefresh=Date.now();
+    await refresh();
+  }
+},3000);
+</script>
+</body>
+</html>
