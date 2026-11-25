@@ -2,97 +2,35 @@
 require("dotenv").config();
 
 const express = require("express");
-const helmet = require("helmet");
+const Database = require("better-sqlite3");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const Database = require("better-sqlite3");
+const helmet = require("helmet");
 const crypto = require("crypto");
 const path = require("path");
 
 const app = express();
 const db = new Database(process.env.DB_FILE || "./zann-vip.sqlite");
 
-const PORT = Number(process.env.PORT || 3000);
-const JWT_SECRET = process.env.JWT_SECRET;
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const PAYMENT_DESTINATION =
-  process.env.PAYMENT_DESTINATION || "089671458080";
-
-if (!JWT_SECRET || JWT_SECRET.length < 32 || !ADMIN_PASSWORD) {
-  throw new Error("Isi JWT_SECRET minimal 32 karakter dan ADMIN_PASSWORD di .env");
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  throw new Error("JWT_SECRET harus diisi dengan secret panjang.");
 }
 
-app.use(helmet({ contentSecurityPolicy: false }));
-app.use(express.json({ limit: "100kb" }));
+app.use(helmet());
+app.use(express.json({ limit: "1mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
-
-db.exec(`
-CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT UNIQUE NOT NULL,
-  password_hash TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS keys_store (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  code TEXT UNIQUE NOT NULL,
-  plan TEXT NOT NULL,
-  duration_days INTEGER,
-  status TEXT NOT NULL DEFAULT 'UNUSED',
-  user_id INTEGER,
-  activated_at INTEGER,
-  expires_at INTEGER,
-  created_at INTEGER NOT NULL,
-  FOREIGN KEY(user_id) REFERENCES users(id)
-);
-
-CREATE TABLE IF NOT EXISTS transactions (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  plan TEXT NOT NULL,
-  quantity INTEGER NOT NULL,
-  unit_price INTEGER NOT NULL,
-  total INTEGER NOT NULL,
-  status TEXT NOT NULL DEFAULT 'PENDING',
-  created_at INTEGER NOT NULL,
-  approved_at INTEGER
-);
-
-CREATE TABLE IF NOT EXISTS participants (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'ACTIVE',
-  created_at INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS game_state (
-  id INTEGER PRIMARY KEY CHECK(id=1),
-  running INTEGER NOT NULL DEFAULT 0,
-  round_number INTEGER NOT NULL DEFAULT 0,
-  updated_at INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS modules (
-  name TEXT PRIMARY KEY,
-  data TEXT NOT NULL,
-  updated_at INTEGER NOT NULL
-);
-
-INSERT OR IGNORE INTO game_state(id,running,round_number,updated_at)
-VALUES(1,0,0,unixepoch());
-`);
+const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const PLANS = {
-  "3hari": { label: "3 Hari", days: 3, price: 5000 },
-  "7hari": { label: "7 Hari", days: 7, price: 10000 },
-  "30hari": { label: "30 Hari", days: 30, price: 40000 },
-  "permanen": { label: "Permanen", days: null, price: 100000 }
+  "3hari": { name: "3 Hari", price: 5000, days: 3 },
+  "7hari": { name: "7 Hari", price: 10000, days: 7 },
+  "30hari": { name: "30 Hari", price: 40000, days: 30 },
+  "permanen": { name: "Permanen", price: 100000, days: null }
 };
 
-const MODULE_NAMES = [
+const MODULES = [
   "timer",
   "mysteryBox",
   "manualGift",
@@ -103,14 +41,62 @@ const MODULE_NAMES = [
   "hostSettings"
 ];
 
-const adminPasswordHash = bcrypt.hashSync(ADMIN_PASSWORD, 12);
+db.exec(`
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 
-function now() {
-  return Math.floor(Date.now() / 1000);
-}
+CREATE TABLE IF NOT EXISTS keys_store (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT UNIQUE NOT NULL,
+  plan TEXT NOT NULL,
+  status TEXT DEFAULT 'UNUSED',
+  user_id INTEGER,
+  expires_at INTEGER,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 
-function makeToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+CREATE TABLE IF NOT EXISTS transactions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL,
+  plan TEXT NOT NULL,
+  quantity INTEGER NOT NULL,
+  amount INTEGER NOT NULL,
+  status TEXT DEFAULT 'PENDING',
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS participants (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  status TEXT DEFAULT 'ACTIVE',
+  round INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS game_state (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  running INTEGER DEFAULT 0,
+  round INTEGER DEFAULT 1,
+  winner TEXT DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS modules (
+  name TEXT PRIMARY KEY,
+  data TEXT NOT NULL
+);
+`);
+
+db.prepare(`
+INSERT OR IGNORE INTO game_state (id, running, round, winner)
+VALUES (1, 0, 1, '')
+`).run();
+
+function makeToken(payload, expiresIn = "12h") {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
 }
 
 function auth(req, res, next) {
@@ -119,121 +105,133 @@ function auth(req, res, next) {
     ? header.slice(7)
     : "";
 
+  if (!token) {
+    return res.status(401).json({ error: "Silakan login." });
+  }
+
   try {
-    if (!token) throw new Error("No token");
     req.auth = jwt.verify(token, JWT_SECRET);
     next();
   } catch {
-    res.status(401).json({ error: "Silakan login kembali." });
+    return res.status(401).json({ error: "Sesi tidak valid." });
   }
 }
 
 function adminOnly(req, res, next) {
-  if (req.auth?.role !== "admin") {
-    return res.status(403).json({ error: "Khusus admin." });
-  }
-  next();
-}
-
-function makeKeyCode() {
-  return "ZVIP-" +
-    crypto.randomBytes(4).toString("hex").toUpperCase() + "-" +
-    crypto.randomBytes(4).toString("hex").toUpperCase();
-}
-
-// Buat KEY. Tidak ada batas total KEY di database.
-// Batas 10.000 hanya untuk satu permintaan agar server tidak kehabisan memori.
-function issueKeys(planId, quantity) {
-  const plan = PLANS[planId];
-  if (!plan) throw new Error("Paket KEY tidak valid.");
-  if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 10000) {
-    throw new Error("Jumlah per proses harus 1 sampai 10.000. Buat batch berikutnya untuk jumlah lebih banyak.");
-  }
-
-  const insert = db.prepare(`
-    INSERT INTO keys_store
-    (code,plan,duration_days,status,created_at)
-    VALUES(?,?,?,'UNUSED',?)
-  `);
-
-  const codes = [];
-  for (let i = 0; i < quantity; i++) {
-    let code;
-    do {
-      code = makeKeyCode();
-    } while (db.prepare("SELECT id FROM keys_store WHERE code=?").get(code));
-
-    insert.run(code, planId, plan.days, now());
-    codes.push(code);
-  }
-  return codes;
-}
-
-function getActiveKey(userId) {
-  const timestamp = now();
-
-  db.prepare(`
-    UPDATE keys_store
-    SET status='EXPIRED'
-    WHERE user_id=?
-      AND status='ACTIVE'
-      AND expires_at IS NOT NULL
-      AND expires_at<=?
-  `).run(userId, timestamp);
-
-  return db.prepare(`
-    SELECT * FROM keys_store
-    WHERE user_id=?
-      AND status='ACTIVE'
-      AND (expires_at IS NULL OR expires_at>?)
-    ORDER BY (expires_at IS NULL) DESC, expires_at DESC
-    LIMIT 1
-  `).get(userId, timestamp);
+  if (req.auth && req.auth.admin === true) return next();
+  return res.status(403).json({ error: "Khusus admin." });
 }
 
 function premium(req, res, next) {
-  if (req.auth.role === "admin") return next();
+  if (req.auth?.admin === true) return next();
 
-  const key = getActiveKey(req.auth.id);
+  const key = db.prepare(`
+    SELECT * FROM keys_store
+    WHERE user_id = ? AND status = 'ACTIVE'
+    ORDER BY id DESC LIMIT 1
+  `).get(req.auth?.userId);
+
   if (!key) {
+    return res.status(403).json({ error: "KEY VIP tidak aktif." });
+  }
+
+  if (key.expires_at && Date.now() >= key.expires_at) {
+    db.prepare(`
+      UPDATE keys_store SET status = 'EXPIRED'
+      WHERE id = ?
+    `).run(key.id);
+
     return res.status(403).json({
-      error: "KEY belum aktif atau sudah kedaluwarsa. Silakan aktifkan KEY baru.",
-      code: "KEY_EXPIRED"
+      error: "Masa aktif KEY sudah habis. Silakan gunakan KEY baru."
     });
   }
 
-  req.activeKey = key;
+  req.vipKey = key;
   next();
 }
 
-function readModule(name, fallback = {}) {
-  const row = db.prepare("SELECT data FROM modules WHERE name=?").get(name);
-  if (!row) return fallback;
+function createKey(plan) {
+  const code = "ZANN-" +
+    crypto.randomBytes(4).toString("hex").toUpperCase() +
+    "-" +
+    crypto.randomBytes(3).toString("hex").toUpperCase();
 
-  try {
-    return JSON.parse(row.data);
-  } catch {
-    return fallback;
-  }
-}
-
-function writeModule(name, data) {
   db.prepare(`
-    INSERT INTO modules(name,data,updated_at)
-    VALUES(?,?,?)
-    ON CONFLICT(name) DO UPDATE SET
-      data=excluded.data,
-      updated_at=excluded.updated_at
-  `).run(name, JSON.stringify(data), now());
+    INSERT INTO keys_store (code, plan)
+    VALUES (?, ?)
+  `).run(code, plan);
+
+  return code;
 }
 
-// ---------------- HEALTH ----------------
+function createKeys(plan, count) {
+  const codes = [];
+  const insert = db.prepare(`
+    INSERT INTO keys_store (code, plan)
+    VALUES (?, ?)
+  `);
 
-app.get("/api/health", (req, res) => {
-  res.json({ online: true, name: "ZANN ELIMINASI VIP" });
+  const transaction = db.transaction(() => {
+    for (let i = 0; i < count; i++) {
+      const code = "ZANN-" +
+        crypto.randomBytes(4).toString("hex").toUpperCase() +
+        "-" +
+        crypto.randomBytes(3).toString("hex").toUpperCase();
+
+      insert.run(code, plan);
+      codes.push(code);
+    }
+  });
+
+  transaction();
+  return codes;
+}
+
+function getGameState() {
+  const state = db.prepare(
+    "SELECT * FROM game_state WHERE id = 1"
+  ).get();
+
+  const players = db.prepare(`
+    SELECT id, name, status, round
+    FROM participants ORDER BY id DESC
+  `).all();
+
+  return { ...state, participants: players };
+}
+
+/* ---------------- ADMIN LOGIN ---------------- */
+
+app.post("/api/admin/login", async (req, res) => {
+  const { username, password } = req.body || {};
+
+  const expectedUser = process.env.ADMIN_USERNAME;
+  const expectedPassword = process.env.ADMIN_PASSWORD;
+
+  if (!expectedUser || !expectedPassword) {
+    return res.status(500).json({ error: "Admin belum dikonfigurasi." });
+  }
+
+  const valid =
+    username === expectedUser &&
+    password === expectedPassword;
+
+  if (!valid) {
+    return res.status(401).json({
+      error: "Username atau password admin salah."
+    });
+  }
+
+  const token = makeToken({ admin: true });
+
+  res.json({
+    success: true,
+    token,
+    message: "Login admin berhasil."
+  });
 });
 
-// ---------------- REGISTER / LOGIN ----------------
+/* ---------------- USER ACCOUNT ---------------- */
 
 app.post("/api/register", async (req, res) => {
   const username = String(req.body.username || "").trim();
@@ -241,7 +239,7 @@ app.post("/api/register", async (req, res) => {
 
   if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
     return res.status(400).json({
-      error: "Username 3–20 karakter, huruf, angka, atau underscore."
+      error: "Username harus 3-20 karakter."
     });
   }
 
@@ -251,16 +249,15 @@ app.post("/api/register", async (req, res) => {
     });
   }
 
-  try {
-    const hash = await bcrypt.hash(password, 12);
-    const result = db.prepare(
-      "INSERT INTO users(username,password_hash) VALUES(?,?)"
-    ).run(username, hash);
+  const hash = await bcrypt.hash(password, 12);
 
-    res.json({
-      success: true,
-      userId: result.lastInsertRowid
-    });
+  try {
+    const result = db.prepare(`
+      INSERT INTO users (username, password)
+      VALUES (?, ?)
+    `).run(username, hash);
+
+    res.json({ success: true, userId: result.lastInsertRowid });
   } catch {
     res.status(409).json({ error: "Username sudah digunakan." });
   }
@@ -270,283 +267,282 @@ app.post("/api/login", async (req, res) => {
   const username = String(req.body.username || "").trim();
   const password = String(req.body.password || "");
 
-  if (
-    username === ADMIN_USERNAME &&
-    await bcrypt.compare(password, adminPasswordHash)
-  ) {
-    return res.json({
-      token: makeToken({ role: "admin", username }),
-      role: "admin"
-    });
-  }
-
   const user = db.prepare(
-    "SELECT * FROM users WHERE username=?"
+    "SELECT * FROM users WHERE username = ?"
   ).get(username);
 
-  if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-    return res.status(401).json({ error: "Username atau password salah." });
+  if (!user || !(await bcrypt.compare(password, user.password))) {
+    return res.status(401).json({ error: "Login gagal." });
   }
 
-  res.json({
-    token: makeToken({
-      role: "user",
-      id: user.id,
-      username: user.username
-    }),
-    role: "user"
+  const token = makeToken({
+    userId: user.id,
+    username: user.username
   });
+
+  res.json({ success: true, token });
 });
 
-// ---------------- TOKO KEY TANPA LOGIN ----------------
+app.get("/api/me", auth, (req, res) => {
+  if (req.auth.admin) {
+    return res.json({ admin: true, username: process.env.ADMIN_USERNAME });
+  }
+
+  const user = db.prepare(`
+    SELECT id, username FROM users WHERE id = ?
+  `).get(req.auth.userId);
+
+  res.json({ user });
+});
+
+/* ---------------- PUBLIC STORE ---------------- */
 
 app.get("/api/store/plans", (req, res) => {
-  res.json({
-    plans: PLANS,
-    destination: PAYMENT_DESTINATION
-  });
+  res.json({ plans: PLANS });
 });
 
 app.post("/api/store/checkout", (req, res) => {
-  const planId = String(req.body.plan || "");
+  const username = String(req.body.username || "").trim();
+  const plan = req.body.plan;
   const quantity = Number(req.body.quantity);
-  const plan = PLANS[planId];
 
-  if (!plan) {
+  if (!username || username.length > 50) {
+    return res.status(400).json({ error: "Masukkan nama pembeli." });
+  }
+
+  if (!PLANS[plan]) {
     return res.status(400).json({ error: "Paket tidak tersedia." });
   }
 
-  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
-    return res.status(400).json({ error: "Jumlah KEY 1–20 per pesanan." });
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
+    return res.status(400).json({ error: "Jumlah KEY 1-100." });
   }
 
-  const total = plan.price * quantity;
+  const amount = PLANS[plan].price * quantity;
 
   const result = db.prepare(`
-    INSERT INTO transactions
-    (plan,quantity,unit_price,total,status,created_at)
-    VALUES(?,?,?,?, 'PENDING',?)
-  `).run(planId, quantity, plan.price, total, now());
+    INSERT INTO transactions (username, plan, quantity, amount)
+    VALUES (?, ?, ?, ?)
+  `).run(username, plan, quantity, amount);
 
   res.json({
     success: true,
     transactionId: result.lastInsertRowid,
-    plan: plan.label,
+    username,
+    plan: PLANS[plan].name,
     quantity,
-    total,
-    destination: PAYMENT_DESTINATION,
-    status: "PENDING",
-    message: "KEY akan diterbitkan setelah pembayaran diperiksa admin."
+    amount,
+    destination: process.env.PAYMENT_DESTINATION,
+    message: "Silakan lakukan transfer. Pesanan menunggu pemeriksaan admin."
   });
 });
 
-// ---------------- REDEEM KEY ----------------
+/* ---------------- KEY ACTIVATION ---------------- */
 
 app.post("/api/key/redeem", auth, (req, res) => {
-  if (req.auth.role !== "user") {
-    return res.status(403).json({ error: "Akun pengguna diperlukan." });
+  if (req.auth.admin) {
+    return res.status(400).json({ error: "Admin tidak perlu KEY VIP." });
   }
 
   const code = String(req.body.code || "").trim().toUpperCase();
-  const key = db.prepare(
-    "SELECT * FROM keys_store WHERE code=? AND status='UNUSED'"
-  ).get(code);
+
+  const key = db.prepare(`
+    SELECT * FROM keys_store WHERE code = ?
+  `).get(code);
 
   if (!key) {
-    return res.status(400).json({
-      error: "KEY tidak ditemukan atau sudah digunakan."
-    });
+    return res.status(404).json({ error: "KEY tidak ditemukan." });
   }
 
-  const activate = db.transaction(() => {
-    const timestamp = now();
-    const expiresAt = key.duration_days === null
-      ? null
-      : timestamp + key.duration_days * 86400;
+  if (key.status !== "UNUSED") {
+    return res.status(409).json({ error: "KEY sudah digunakan atau tidak aktif." });
+  }
 
-    const result = db.prepare(`
-      UPDATE keys_store
-      SET user_id=?,status='ACTIVE',activated_at=?,expires_at=?
-      WHERE id=? AND status='UNUSED'
-    `).run(req.auth.id, timestamp, expiresAt, key.id);
+  const expiresAt = key.plan === "permanen"
+    ? null
+    : Date.now() + PLANS[key.plan].days * 86400000;
 
-    if (result.changes !== 1) throw new Error("KEY sudah digunakan.");
+  db.prepare(`
+    UPDATE keys_store
+    SET status = 'ACTIVE', user_id = ?, expires_at = ?
+    WHERE id = ? AND status = 'UNUSED'
+  `).run(req.auth.userId, expiresAt, key.id);
 
-    return { expiresAt, plan: key.plan };
+  res.json({
+    success: true,
+    plan: key.plan,
+    expiresAt
   });
-
-  try {
-    res.json({ success: true, ...activate() });
-  } catch (err) {
-    res.status(409).json({ error: err.message });
-  }
 });
 
 app.get("/api/key/status", auth, (req, res) => {
-  if (req.auth.role === "admin") {
-    return res.json({ active: true, admin: true, permanent: true });
+  if (req.auth.admin) {
+    return res.json({ active: true, permanent: true, admin: true });
   }
 
-  const key = getActiveKey(req.auth.id);
+  const key = db.prepare(`
+    SELECT * FROM keys_store
+    WHERE user_id = ? AND status = 'ACTIVE'
+    ORDER BY id DESC LIMIT 1
+  `).get(req.auth.userId);
+
   if (!key) return res.json({ active: false });
+
+  if (key.expires_at && Date.now() >= key.expires_at) {
+    db.prepare(`
+      UPDATE keys_store SET status = 'EXPIRED' WHERE id = ?
+    `).run(key.id);
+
+    return res.json({ active: false, expired: true });
+  }
 
   res.json({
     active: true,
     plan: key.plan,
-    permanent: key.expires_at === null,
-    expiresAt: key.expires_at ? key.expires_at * 1000 : null
+    expiresAt: key.expires_at,
+    permanent: key.expires_at === null
   });
 });
 
-// ---------------- ADMIN: BUAT KEY TANPA BATAS TOTAL ----------------
+/* ---------------- ADMIN KEY MANAGEMENT ---------------- */
 
 app.post("/api/admin/keys/create", auth, adminOnly, (req, res) => {
-  const planId = String(req.body.plan || "");
-  const quantity = Number(req.body.quantity);
+  const plan = req.body.plan;
+  const count = Number(req.body.count);
 
-  try {
-    const codes = db.transaction(() =>
-      issueKeys(planId, quantity)
-    )();
-
-    res.json({
-      success: true,
-      quantity: codes.length,
-      codes
-    });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+  if (!PLANS[plan]) {
+    return res.status(400).json({ error: "Paket tidak valid." });
   }
+
+  if (!Number.isInteger(count) || count < 1 || count > 10000) {
+    return res.status(400).json({
+      error: "Jumlah KEY harus 1 sampai 10000 per pembuatan."
+    });
+  }
+
+  const codes = createKeys(plan, count);
+
+  res.json({
+    success: true,
+    count: codes.length,
+    plan,
+    codes
+  });
 });
 
 app.get("/api/admin/keys", auth, adminOnly, (req, res) => {
-  const rows = db.prepare(`
-    SELECT id,code,plan,duration_days,status,user_id,
-           activated_at,expires_at,created_at
-    FROM keys_store
-    ORDER BY id DESC
-    LIMIT 500
+  const keys = db.prepare(`
+    SELECT id, code, plan, status, user_id, expires_at, created_at
+    FROM keys_store ORDER BY id DESC LIMIT 500
   `).all();
 
-  res.json(rows);
+  res.json({ keys });
 });
 
-// ---------------- ADMIN: PEMBAYARAN ----------------
+/* ---------------- ADMIN TRANSACTIONS ---------------- */
 
 app.get("/api/admin/transactions", auth, adminOnly, (req, res) => {
-  res.json(db.prepare(`
-    SELECT * FROM transactions
-    ORDER BY id DESC
-    LIMIT 200
-  `).all());
+  const transactions = db.prepare(`
+    SELECT * FROM transactions ORDER BY id DESC LIMIT 500
+  `).all();
+
+  res.json({ transactions });
 });
 
 app.post("/api/admin/transactions/:id/approve", auth, adminOnly, (req, res) => {
   const id = Number(req.params.id);
 
-  try {
-    const result = db.transaction(() => {
-      const tx = db.prepare(
-        "SELECT * FROM transactions WHERE id=?"
-      ).get(id);
+  const transaction = db.prepare(`
+    SELECT * FROM transactions WHERE id = ?
+  `).get(id);
 
-      if (!tx || tx.status !== "PENDING") {
-        throw new Error("Transaksi tidak ada atau sudah diproses.");
-      }
-
-      const codes = issueKeys(tx.plan, tx.quantity);
-
-      const updated = db.prepare(`
-        UPDATE transactions
-        SET status='PAID',approved_at=?
-        WHERE id=? AND status='PENDING'
-      `).run(now(), id);
-
-      if (updated.changes !== 1) {
-        throw new Error("Transaksi sudah diproses.");
-      }
-
-      return codes;
-    })();
-
-    res.json({
-      success: true,
-      message: "Pembayaran disetujui. Bagikan KEY ini kepada pembeli.",
-      keys: result
-    });
-  } catch (err) {
-    res.status(409).json({ error: err.message });
-  }
-});
-
-app.post("/api/admin/transactions/:id/reject", auth, adminOnly, (req, res) => {
-  const result = db.prepare(`
-    UPDATE transactions SET status='REJECTED'
-    WHERE id=? AND status='PENDING'
-  `).run(Number(req.params.id));
-
-  if (!result.changes) {
+  if (!transaction || transaction.status !== "PENDING") {
     return res.status(409).json({
       error: "Transaksi tidak ditemukan atau sudah diproses."
     });
   }
 
+  const issue = db.transaction(() => {
+    const update = db.prepare(`
+      UPDATE transactions SET status = 'APPROVED'
+      WHERE id = ? AND status = 'PENDING'
+    `).run(id);
+
+    if (update.changes !== 1) {
+      throw new Error("Transaksi sudah diproses.");
+    }
+
+    return createKeys(transaction.plan, transaction.quantity);
+  });
+
+  try {
+    const codes = issue();
+
+    res.json({
+      success: true,
+      transactionId: id,
+      codes
+    });
+  } catch (error) {
+    res.status(409).json({ error: error.message });
+  }
+});
+
+app.post("/api/admin/transactions/:id/reject", auth, adminOnly, (req, res) => {
+  const result = db.prepare(`
+    UPDATE transactions SET status = 'REJECTED'
+    WHERE id = ? AND status = 'PENDING'
+  `).run(Number(req.params.id));
+
+  if (!result.changes) {
+    return res.status(404).json({ error: "Transaksi tidak ditemukan." });
+  }
+
   res.json({ success: true });
 });
 
-// ---------------- MODE ELIMINASI ----------------
+/* ---------------- ELIMINATION GAME ---------------- */
 
 app.get("/api/game/state", auth, premium, (req, res) => {
-  const game = db.prepare(
-    "SELECT * FROM game_state WHERE id=1"
-  ).get();
-
-  const participants = db.prepare(
-    "SELECT * FROM participants ORDER BY id ASC"
-  ).all();
-
-  res.json({
-    running: !!game.running,
-    round: game.round_number,
-    participants,
-    modules: Object.fromEntries(
-      MODULE_NAMES.map(name => [name, readModule(name)])
-    )
-  });
+  res.json(getGameState());
 });
 
-app.post("/api/admin/game/participants", auth, adminOnly, (req, res) => {
-  const name = String(req.body.name || "").trim().slice(0, 40);
+app.post("/api/game/participant", auth, premium, (req, res) => {
+  const name = String(req.body.name || "").trim();
 
-  if (!name) {
-    return res.status(400).json({ error: "Nama peserta wajib diisi." });
+  if (!name || name.length > 50) {
+    return res.status(400).json({ error: "Nama peserta tidak valid." });
   }
 
+  const state = db.prepare(
+    "SELECT round FROM game_state WHERE id = 1"
+  ).get();
+
   const result = db.prepare(`
-    INSERT INTO participants(name,status,created_at)
-    VALUES(?,'ACTIVE',?)
-  `).run(name, now());
+    INSERT INTO participants (name, status, round)
+    VALUES (?, 'ACTIVE', ?)
+  `).run(name, state.round);
 
   res.json({ success: true, id: result.lastInsertRowid });
 });
 
-app.post("/api/admin/game/participants/:id/eliminate", auth, adminOnly, (req, res) => {
+app.post("/api/game/eliminate/:id", auth, premium, (req, res) => {
   const result = db.prepare(`
-    UPDATE participants SET status='ELIMINATED'
-    WHERE id=? AND status='ACTIVE'
+    UPDATE participants SET status = 'ELIMINATED'
+    WHERE id = ? AND status = 'ACTIVE'
   `).run(Number(req.params.id));
 
   if (!result.changes) {
-    return res.status(404).json({ error: "Peserta aktif tidak ditemukan." });
+    return res.status(404).json({ error: "Peserta tidak aktif atau tidak ditemukan." });
   }
 
   res.json({ success: true });
 });
 
-app.post("/api/admin/game/participants/:id/restore", auth, adminOnly, (req, res) => {
+app.post("/api/game/restore/:id", auth, premium, (req, res) => {
   const result = db.prepare(`
-    UPDATE participants SET status='ACTIVE'
-    WHERE id=?
+    UPDATE participants SET status = 'ACTIVE'
+    WHERE id = ? AND status = 'ELIMINATED'
   `).run(Number(req.params.id));
 
   if (!result.changes) {
@@ -556,69 +552,113 @@ app.post("/api/admin/game/participants/:id/restore", auth, adminOnly, (req, res)
   res.json({ success: true });
 });
 
-app.post("/api/admin/game/start-round", auth, adminOnly, (req, res) => {
-  const result = db.prepare(`
-    UPDATE game_state
-    SET running=1,round_number=round_number+1,updated_at=?
-    WHERE id=1
-  `).run(now());
-
-  const game = db.prepare(
-    "SELECT * FROM game_state WHERE id=1"
-  ).get();
-
-  res.json({ success: true, round: game.round_number });
-});
-
-app.post("/api/admin/game/stop", auth, adminOnly, (req, res) => {
+app.post("/api/game/round/start", auth, premium, (req, res) => {
   db.prepare(`
-    UPDATE game_state SET running=0,updated_at=? WHERE id=1
-  `).run(now());
+    UPDATE game_state SET running = 1 WHERE id = 1
+  `).run();
 
   res.json({ success: true });
 });
 
-app.post("/api/admin/game/reset", auth, adminOnly, (req, res) => {
+app.post("/api/game/round/next", auth, premium, (req, res) => {
+  const state = db.prepare(
+    "SELECT round FROM game_state WHERE id = 1"
+  ).get();
+
+  const nextRound = state.round + 1;
+
+  db.prepare(`
+    UPDATE game_state SET round = ?, running = 1 WHERE id = 1
+  `).run(nextRound);
+
+  res.json({ success: true, round: nextRound });
+});
+
+app.post("/api/game/round/stop", auth, premium, (req, res) => {
+  db.prepare(`
+    UPDATE game_state SET running = 0 WHERE id = 1
+  `).run();
+
+  res.json({ success: true });
+});
+
+app.post("/api/game/winner", auth, premium, (req, res) => {
+  const winner = String(req.body.name || "").trim();
+
+  if (!winner || winner.length > 50) {
+    return res.status(400).json({ error: "Nama pemenang tidak valid." });
+  }
+
+  db.prepare(`
+    UPDATE game_state SET winner = ?, running = 0 WHERE id = 1
+  `).run(winner);
+
+  res.json({ success: true, winner });
+});
+
+app.post("/api/game/reset", auth, premium, (req, res) => {
   const reset = db.transaction(() => {
-    db.prepare("UPDATE participants SET status='ACTIVE'").run();
+    db.prepare("DELETE FROM participants").run();
+
     db.prepare(`
       UPDATE game_state
-      SET running=0,round_number=0,updated_at=?
-      WHERE id=1
-    `).run(now());
+      SET running = 0, round = 1, winner = ''
+      WHERE id = 1
+    `).run();
   });
 
   reset();
   res.json({ success: true });
 });
 
-// ---------------- MODUL FITUR TAMBAHAN ----------------
+/* ---------------- GAME MODULES ---------------- */
 
-app.put("/api/game/module/:name", auth, premium, (req, res) => {
+app.get("/api/modules/:name", auth, premium, (req, res) => {
   const name = req.params.name;
 
-  if (!MODULE_NAMES.includes(name)) {
+  if (!MODULES.includes(name)) {
     return res.status(404).json({ error: "Modul tidak ditemukan." });
   }
 
-  const data = req.body.data;
+  const row = db.prepare(`
+    SELECT data FROM modules WHERE name = ?
+  `).get(name);
 
-  if (!data || typeof data !== "object" ||
-      JSON.stringify(data).length > 50000) {
-    return res.status(400).json({ error: "Data modul tidak valid." });
+  res.json({ data: row ? JSON.parse(row.data) : {} });
+});
+
+app.put("/api/modules/:name", auth, premium, (req, res) => {
+  const name = req.params.name;
+
+  if (!MODULES.includes(name)) {
+    return res.status(404).json({ error: "Modul tidak ditemukan." });
   }
 
-  writeModule(name, data);
+  const data = JSON.stringify(req.body || {});
+
+  if (data.length > 50000) {
+    return res.status(413).json({ error: "Data terlalu besar." });
+  }
+
+  db.prepare(`
+    INSERT INTO modules (name, data)
+    VALUES (?, ?)
+    ON CONFLICT(name) DO UPDATE SET data = excluded.data
+  `).run(name, data);
+
   res.json({ success: true });
 });
 
-// ---------------- ERROR / START ----------------
+/* ---------------- SERVER ---------------- */
 
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ error: "Terjadi kesalahan server." });
+app.get("/api/health", (req, res) => {
+  res.json({ online: true, name: "ZANN ELIMINASI VIP" });
+});
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.listen(PORT, () => {
-  console.log("ZANN ELIMINASI VIP aktif di port " + PORT);
+  console.log("ZANN ELIMINASI VIP berjalan di port " + PORT);
 });
