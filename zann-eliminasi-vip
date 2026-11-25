@@ -2,5 +2,7 @@ zann-eliminasi-vip/
 ├── package.json
 ├── .env
 ├── server.js
+├── zann-vip.sqlite       (dibuat otomatis)
 └── public/
-    └── index.html
+    ├── index.html
+    └── admin.html
